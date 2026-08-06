@@ -1,59 +1,57 @@
-name: Claude Issue Triage
+name: Claude Issue Formatter
 
 on:
   issues:
     types: [opened, edited]
 
 jobs:
-  triage:
+  format-issue:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       issues: write
       id-token: write
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
-      - name: Run Claude Issue Triage
+      - name: Format issue with Claude
         uses: anthropics/claude-code-action@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          claude_args: "--allowedTools Bash(gh issue *)"
           prompt: |
-            Analiza el issue #${{ github.event.issue.number }} del repositorio ${{ github.repository }}.
-            Contexto del proyecto: Tetris clasico en JavaScript vanilla (sin dependencias, sin build).
-            Archivos: index.html, style.css, game.js. Ver CLAUDE.md para arquitectura detallada
-            (tablero, piezas, colision, wall kicks, game loop, puntuacion/nivel, ghost piece, render, input, overlay).
+            You are a GitHub issue formatter for a Tetris game project (vanilla JS/HTML/CSS, no dependencies).
 
-            Pasos:
-            1. Lee el issue con `gh issue view ${{ github.event.issue.number }}`.
-            2. Asigna las labels que correspondan de las ya existentes en el repo
-               (bug, enhancement, documentation, question, duplicate, invalid, wontfix, help wanted, good first issue)
-               con `gh issue edit ${{ github.event.issue.number }} --add-label "nombre"`.
-               No quites labels existentes salvo que ya no apliquen. No crees labels nuevas salvo necesidad clara.
-            3. Publica un unico comentario nuevo en el issue con `gh issue comment ${{ github.event.issue.number }} --body "..."`
-               (o `--body-file`) con este formato, en espanol:
+            An issue was just ${{ github.event.action }} with the following details:
+            - Issue number: #${{ github.event.issue.number }}
+            - Title: ${{ github.event.issue.title }}
+            - Body: ${{ github.event.issue.body }}
+            - Author: ${{ github.event.issue.user.login }}
 
-               ## Diagnostico
-               Resumen general del problema.
+            Your tasks:
+            1. **Add labels** based on the issue content. Use only these labels:
+               - `bug` — something is broken or behaving incorrectly
+               - `enhancement` — new feature or improvement request
+               - `question` — asking for help or clarification
+               - `documentation` — docs need updating
+               - `good first issue` — simple, beginner-friendly task
+               - `duplicate` — if it seems like a known/repeated problem
 
-               ## Posibles causas
-               Lista de causas probables, en base al codigo/arquitectura descrita en CLAUDE.md.
+            2. **Post a comment** on the issue that includes:
+               - A brief, friendly summary of what the issue is about (1-2 sentences)
+               - A "Formatted Report" section with:
+                 - **Type**: Bug / Feature Request / Question / Other
+                 - **Summary**: one clear sentence describing the problem or request
+                 - **Steps to reproduce** (for bugs): list them if not provided, ask the user to provide them if it's a bug
+                 - **Expected behavior** (for bugs): what should happen
+                 - **Suggested labels**: the labels you applied and why
+               - A closing note thanking the contributor
 
-               ## Impacto
-               Severidad y a que se afecta (jugabilidad, render, puntuacion, etc).
+            Use the `gh` CLI to apply labels and post the comment. Example commands:
+              gh issue edit ${{ github.event.issue.number }} --add-label "bug" --repo ${{ github.repository }}
+              gh issue comment ${{ github.event.issue.number }} --body "..." --repo ${{ github.repository }}
 
-               ## Componentes afectados
-               Cuales modulos/funciones de game.js entran en juego (spawn, collide, tryRotate, lockPiece, clearLines, loop, draw, etc).
-
-               ## Propuesta inicial de solucion
-               Enfoque de alto nivel para resolverlo. NO incluyas codigo ni diffs, solo la estrategia.
-
-            No modifiques ningun archivo del repositorio. No implementes codigo. Tu unica salida son labels + un comentario.
-          claude_args: |
-            --allowedTools "Bash(gh issue view:*),Bash(gh issue edit:*),Bash(gh issue comment:*),Bash(gh label list:*)"
+            Be concise, helpful, and friendly. Do not over-engineer the response.
