@@ -1,0 +1,59 @@
+name: Claude Issue Triage
+
+on:
+  issues:
+    types: [opened, edited]
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Run Claude Issue Triage
+        uses: anthropics/claude-code-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            Analiza el issue #${{ github.event.issue.number }} del repositorio ${{ github.repository }}.
+            Contexto del proyecto: Tetris clasico en JavaScript vanilla (sin dependencias, sin build).
+            Archivos: index.html, style.css, game.js. Ver CLAUDE.md para arquitectura detallada
+            (tablero, piezas, colision, wall kicks, game loop, puntuacion/nivel, ghost piece, render, input, overlay).
+
+            Pasos:
+            1. Lee el issue con `gh issue view ${{ github.event.issue.number }}`.
+            2. Asigna las labels que correspondan de las ya existentes en el repo
+               (bug, enhancement, documentation, question, duplicate, invalid, wontfix, help wanted, good first issue)
+               con `gh issue edit ${{ github.event.issue.number }} --add-label "nombre"`.
+               No quites labels existentes salvo que ya no apliquen. No crees labels nuevas salvo necesidad clara.
+            3. Publica un unico comentario nuevo en el issue con `gh issue comment ${{ github.event.issue.number }} --body "..."`
+               (o `--body-file`) con este formato, en espanol:
+
+               ## Diagnostico
+               Resumen general del problema.
+
+               ## Posibles causas
+               Lista de causas probables, en base al codigo/arquitectura descrita en CLAUDE.md.
+
+               ## Impacto
+               Severidad y a que se afecta (jugabilidad, render, puntuacion, etc).
+
+               ## Componentes afectados
+               Cuales modulos/funciones de game.js entran en juego (spawn, collide, tryRotate, lockPiece, clearLines, loop, draw, etc).
+
+               ## Propuesta inicial de solucion
+               Enfoque de alto nivel para resolverlo. NO incluyas codigo ni diffs, solo la estrategia.
+
+            No modifiques ningun archivo del repositorio. No implementes codigo. Tu unica salida son labels + un comentario.
+          claude_args: |
+            --allowedTools "Bash(gh issue view:*),Bash(gh issue edit:*),Bash(gh issue comment:*),Bash(gh label list:*)"
