@@ -25,13 +25,6 @@ jobs:
           prompt: |
             You are a GitHub issue formatter for a Tetris game project (vanilla JS/HTML/CSS, no dependencies).
 
-<<<<<<< HEAD
-            An issue was just ${{ github.event.action }} with the following details:
-            - Issue number: #${{ github.event.issue.number }}
-            - Title: ${{ github.event.issue.title }}
-            - Body: ${{ github.event.issue.body }}
-            - Author: ${{ github.event.issue.user.login }}
-=======
             Pasos:
             1. Lee el issue con `gh issue view ${{ github.event.issue.number }}`.
             2. Asigna las labels que correspondan de las ya existentes en el repo
@@ -41,7 +34,6 @@ jobs:
             3. Publica un unico comentario nuevo en el issue con `gh issue comment ${{ github.event.issue.number }} --body "..."`
                (o `--body-file`) con este formato, en espanol y en Markdown valido que GitHub pueda renderizar
                correctamente (encabezados con `##`, listas con `-`, bloques de codigo con backticks si hace falta citar algo):
->>>>>>> e45c58e (Cambios 2)
 
             Your tasks:
             1. **Add labels** based on the issue content. Use only these labels:
